@@ -493,22 +493,22 @@ function openTagEditor() {
     modal.classList.add('active');
 }
 
+function syncDomToState() {
+    // Collect any changes from current DOM (names, active states) into editingTagData
+    const items = document.querySelectorAll('.tag-editor-item');
+    items.forEach(item => {
+        const position = parseInt(item.querySelector('.tag-name').dataset.position);
+        const tagDataItem = editingTagData.find(t => t.position === position);
+        if (tagDataItem) {
+            tagDataItem.name = item.querySelector('.tag-name').value;
+            tagDataItem.active = item.querySelector('.active').checked;
+            // Note: We don't sync displayOrder here - that's managed by move functions
+        }
+    });
+}
+
 function renderTagEditor() {
     const container = document.getElementById('tagEditorList');
-
-    // First, collect any changes from current DOM (names, active states)
-    if (container.children.length > 0) {
-        const items = document.querySelectorAll('.tag-editor-item');
-        items.forEach(item => {
-            const position = parseInt(item.querySelector('.tag-name').dataset.position);
-            const tagDataItem = editingTagData.find(t => t.position === position);
-            if (tagDataItem) {
-                tagDataItem.name = item.querySelector('.tag-name').value;
-                tagDataItem.active = item.querySelector('.active').checked;
-                tagDataItem.displayOrder = parseInt(item.querySelector('.order').value);
-            }
-        });
-    }
 
     // Sort by display order
     const sortedData = [...editingTagData].sort((a, b) => a.displayOrder - b.displayOrder);
@@ -543,54 +543,36 @@ function renderTagEditor() {
 function moveTagUp(index) {
     if (index === 0) return;
 
-    // First, collect current DOM state
-    const items = document.querySelectorAll('.tag-editor-item');
-    items.forEach(item => {
-        const position = parseInt(item.querySelector('.tag-name').dataset.position);
-        const tagDataItem = editingTagData.find(t => t.position === position);
-        if (tagDataItem) {
-            tagDataItem.name = item.querySelector('.tag-name').value;
-            tagDataItem.active = item.querySelector('.active').checked;
-            tagDataItem.displayOrder = parseInt(item.querySelector('.order').value);
-        }
-    });
+    // First, sync any user edits from DOM to state
+    syncDomToState();
 
-    // Sort to get current order
+    // Sort to get current display order
     const sortedData = [...editingTagData].sort((a, b) => a.displayOrder - b.displayOrder);
 
-    // Swap display orders
+    // Swap display orders in the actual editingTagData
     const temp = sortedData[index].displayOrder;
     sortedData[index].displayOrder = sortedData[index - 1].displayOrder;
     sortedData[index - 1].displayOrder = temp;
 
-    // Re-render
+    // Re-render with updated state
     renderTagEditor();
 }
 
 function moveTagDown(index) {
-    // First, collect current DOM state
-    const items = document.querySelectorAll('.tag-editor-item');
-    items.forEach(item => {
-        const position = parseInt(item.querySelector('.tag-name').dataset.position);
-        const tagDataItem = editingTagData.find(t => t.position === position);
-        if (tagDataItem) {
-            tagDataItem.name = item.querySelector('.tag-name').value;
-            tagDataItem.active = item.querySelector('.active').checked;
-            tagDataItem.displayOrder = parseInt(item.querySelector('.order').value);
-        }
-    });
+    // First, sync any user edits from DOM to state
+    syncDomToState();
 
-    // Sort to get current order
+    // Sort to get current display order
     const sortedData = [...editingTagData].sort((a, b) => a.displayOrder - b.displayOrder);
 
     if (index === sortedData.length - 1) return;
 
-    // Swap display orders
+    // Swap display orders in the actual editingTagData
     const temp = sortedData[index].displayOrder;
     sortedData[index].displayOrder = sortedData[index + 1].displayOrder;
     sortedData[index + 1].displayOrder = temp;
 
-    // Re-render
+    // Re-render with updated state
     renderTagEditor();
 }
 
@@ -600,16 +582,7 @@ function closeTagEditor() {
 
 async function saveTagChanges() {
     // First, sync current DOM state into editingTagData
-    const items = document.querySelectorAll('.tag-editor-item');
-    items.forEach(item => {
-        const position = parseInt(item.querySelector('.tag-name').dataset.position);
-        const tagDataItem = editingTagData.find(t => t.position === position);
-        if (tagDataItem) {
-            tagDataItem.name = item.querySelector('.tag-name').value;
-            tagDataItem.active = item.querySelector('.active').checked;
-            tagDataItem.displayOrder = parseInt(item.querySelector('.order').value);
-        }
-    });
+    syncDomToState();
 
     // Build updates array from editingTagData
     const updates = [];
