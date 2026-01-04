@@ -44,18 +44,39 @@ async function loadTags() {
 }
 async function loadContacts() {
     try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/phonebase?select=*&order=name.asc`, {
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        allContacts = [];
+        let offset = 0;
+        const limit = 1000;
+        let hasMore = true;
+
+        // Fetch contacts in batches until we get all of them
+        while (hasMore) {
+            const rangeEnd = offset + limit - 1;
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/phonebase?select=*&order=name.asc`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Range': `${offset}-${rangeEnd}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to load contacts');
+
+            const batch = await response.json();
+            allContacts = [...allContacts, ...batch];
+
+            // If we got fewer results than the limit, we've reached the end
+            if (batch.length < limit) {
+                hasMore = false;
+            } else {
+                offset += limit;
             }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load contacts');
-        
-        allContacts = await response.json();
+
+            console.log(`Loaded ${allContacts.length} contacts so far...`);
+        }
+
         filteredContacts = [...allContacts];
-        console.log(`Loaded ${allContacts.length} contacts`);
+        console.log(`Finished loading ${allContacts.length} total contacts`);
     } catch (error) {
         console.error('Error loading contacts:', error);
         alert('Failed to load contacts. Check console for details.');
