@@ -92,14 +92,37 @@ header h1 {
 .search-box {
     padding: 1rem;
     border-bottom: 1px solid #ddd;
+    position: relative;
 }
 
 .search-box input {
     width: 100%;
-    padding: 0.5rem;
+    padding: 0.5rem 2rem 0.5rem 0.5rem;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 0.9rem;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 1.3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    transition: color 0.2s;
+}
+
+.clear-search-btn:hover {
+    color: #333;
 }
 
 /* Alpha Filter */

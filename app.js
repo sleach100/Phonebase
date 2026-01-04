@@ -159,12 +159,30 @@ function setupEventListeners() {
         searchTerm = e.target.value.toLowerCase();
         applyFilters();
         renderContactList();
+
+        // Show/hide clear button
+        const clearBtn = document.getElementById('clearSearchBtn');
+        clearBtn.style.display = searchTerm ? 'block' : 'none';
     });
-    
+
     // Header buttons
     document.getElementById('newEntryBtn').addEventListener('click', () => openContactEditor());
     document.getElementById('showTagsBtn').addEventListener('click', toggleTags);
     document.getElementById('editTagsBtn').addEventListener('click', openTagEditor);
+}
+
+// Clear search
+function clearSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+
+    searchInput.value = '';
+    searchTerm = '';
+    clearBtn.style.display = 'none';
+
+    applyFilters();
+    renderContactList();
+    searchInput.focus();
 }
 
 // Filtering
