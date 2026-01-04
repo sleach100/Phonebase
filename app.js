@@ -530,8 +530,8 @@ async function saveTagChanges() {
     }
     
     try {
-        // Delete all existing tags
-        await fetch(`${SUPABASE_URL}/rest/v1/tags`, {
+        // Delete all existing tags (must use a filter in Supabase)
+        await fetch(`${SUPABASE_URL}/rest/v1/tags?position=gte.0`, {
             method: 'DELETE',
             headers: {
                 'apikey': SUPABASE_ANON_KEY,
