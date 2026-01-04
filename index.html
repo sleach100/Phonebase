@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Base - Tag Edition</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>📞 Phone Base - Tag Edition</h1>
+            <div class="header-controls">
+                <button id="newEntryBtn" class="btn btn-primary">NEW ENTRY</button>
+                <button id="showTagsBtn" class="btn">Show Tags</button>
+                <button id="editTagsBtn" class="btn">Edit Tags</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Sidebar - Filters & List -->
+            <aside class="sidebar">
+                <!-- Search -->
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search contacts...">
+                </div>
+
+                <!-- A-Z Filter -->
+                <div class="alpha-filter">
+                    <button class="alpha-btn active" data-letter="ALL">ALL</button>
+                    <button class="alpha-btn" data-letter="A">A</button>
+                    <button class="alpha-btn" data-letter="B">B</button>
+                    <button class="alpha-btn" data-letter="C">C</button>
+                    <button class="alpha-btn" data-letter="D">D</button>
+                    <button class="alpha-btn" data-letter="E">E</button>
+                    <button class="alpha-btn" data-letter="F">F</button>
+                    <button class="alpha-btn" data-letter="G">G</button>
+                    <button class="alpha-btn" data-letter="H">H</button>
+                    <button class="alpha-btn" data-letter="I">I</button>
+                    <button class="alpha-btn" data-letter="J">J</button>
+                    <button class="alpha-btn" data-letter="K">K</button>
+                    <button class="alpha-btn" data-letter="L">L</button>
+                    <button class="alpha-btn" data-letter="M">M</button>
+                    <button class="alpha-btn" data-letter="N">N</button>
+                    <button class="alpha-btn" data-letter="O">O</button>
+                    <button class="alpha-btn" data-letter="P">P</button>
+                    <button class="alpha-btn" data-letter="Q">Q</button>
+                    <button class="alpha-btn" data-letter="R">R</button>
+                    <button class="alpha-btn" data-letter="S">S</button>
+                    <button class="alpha-btn" data-letter="T">T</button>
+                    <button class="alpha-btn" data-letter="U">U</button>
+                    <button class="alpha-btn" data-letter="V">V</button>
+                    <button class="alpha-btn" data-letter="W">W</button>
+                    <button class="alpha-btn" data-letter="X">X</button>
+                    <button class="alpha-btn" data-letter="Y">Y</button>
+                    <button class="alpha-btn" data-letter="Z">Z</button>
+                </div>
+
+                <!-- Tag Filters (hidden by default) -->
+                <div id="tagFilters" class="tag-filters" style="display: none;">
+                    <h3>Filter by Tags</h3>
+                    <div id="tagFilterList"></div>
+                </div>
+
+                <!-- Contact List -->
+                <div class="contact-list" id="contactList">
+                    <div class="loading">Loading contacts...</div>
+                </div>
+
+                <div class="entry-count">
+                    Entries Shown: <span id="entryCount">0</span>
+                </div>
+            </aside>
+
+            <!-- Right Panel - Contact Details -->
+            <main class="detail-panel">
+                <div id="contactDetail" class="contact-detail">
+                    <div class="empty-state">
+                        Select a contact to view details
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Tag Editor Modal -->
+    <div id="tagEditorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Tags</h2>
+                <button class="close-btn" onclick="closeTagEditor()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tag-editor-header">
+                    <div>Pos</div>
+                    <div>Tag Name</div>
+                    <div>Order</div>
+                    <div>Active</div>
+                </div>
+                <div id="tagEditorList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeTagEditor()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveTagChanges()">Save Tags</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Edit Modal -->
+    <div id="contactEditModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="editModalTitle">New Entry</h2>
+                <button class="close-btn" onclick="closeContactEditor()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="contactForm">
+                    <input type="hidden" id="editContactId">
+                    
+                    <div class="form-group">
+                        <label>NAME</label>
+                        <input type="text" id="editName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>FIRST</label>
+                        <input type="text" id="editFirst">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>PHONE</label>
+                        <input type="text" id="editPhone">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>PREFIX</label>
+                        <input type="text" id="editPrefix">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>ADDRESS</label>
+                        <input type="text" id="editAddress1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>ADDRESS 2</label>
+                        <input type="text" id="editAddress2">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>CITY</label>
+                        <input type="text" id="editCity">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>STATE</label>
+                        <input type="text" id="editState">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>ZIP</label>
+                        <input type="text" id="editZip">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>EMAIL/FAX</label>
+                        <input type="text" id="editEmail">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>NOTES</label>
+                        <textarea id="editNotes" rows="6"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>TAGS</label>
+                        <div id="editTagsList" class="edit-tags-list"></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="deleteContact()" id="deleteBtn" style="margin-right: auto;">Delete</button>
+                <button class="btn" onclick="closeContactEditor()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveContact()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
