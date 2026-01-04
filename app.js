@@ -474,32 +474,91 @@ async function deleteContact() {
 // Tag Editor
 function openTagEditor() {
     const modal = document.getElementById('tagEditorModal');
+    renderTagEditor();
+    modal.classList.add('active');
+}
+
+function renderTagEditor() {
     const container = document.getElementById('tagEditorList');
-    
-    // Show all 50 possible tag positions
-    let html = '';
+
+    // Create array of all 50 possible tag positions with their data
+    const tagData = [];
     for (let pos = 0; pos < 50; pos++) {
         const tag = allTags.find(t => t.position === pos);
-        const tagName = tag ? tag.name : '';
-        const displayOrder = tag ? tag.display_order : (allTags.length + pos + 1);
-        const isActive = tag ? tag.active : false;
-        
+        tagData.push({
+            position: pos,
+            name: tag ? tag.name : '',
+            displayOrder: tag ? tag.display_order : (allTags.length + pos + 1),
+            active: tag ? tag.active : false
+        });
+    }
+
+    // Sort by display order
+    tagData.sort((a, b) => a.displayOrder - b.displayOrder);
+
+    // Render sorted tags
+    let html = '';
+    tagData.forEach((tag, index) => {
+        const isFirst = index === 0;
+        const isLast = index === tagData.length - 1;
+
         html += `
-            <div class="tag-editor-item">
-                <div class="position">${pos + 1}</div>
-                <input type="text" class="tag-name" data-position="${pos}" 
-                       value="${escapeHtml(tagName)}" 
-                       placeholder="Tag ${pos + 1}">
-                <input type="number" class="order" data-position="${pos}" 
-                       value="${displayOrder}" min="1" max="50">
-                <input type="checkbox" class="active" data-position="${pos}"
-                       ${isActive ? 'checked' : ''}>
+            <div class="tag-editor-item" data-index="${index}">
+                <div class="position">${tag.position + 1}</div>
+                <input type="text" class="tag-name" data-position="${tag.position}"
+                       value="${escapeHtml(tag.name)}"
+                       placeholder="Tag ${tag.position + 1}">
+                <input type="hidden" class="order" data-position="${tag.position}"
+                       value="${tag.displayOrder}">
+                <input type="checkbox" class="active" data-position="${tag.position}"
+                       ${tag.active ? 'checked' : ''}>
+                <div class="tag-actions">
+                    <button class="btn-arrow" onclick="moveTagUp(${index})" ${isFirst ? 'disabled' : ''}>▲</button>
+                    <button class="btn-arrow" onclick="moveTagDown(${index})" ${isLast ? 'disabled' : ''}>▼</button>
+                </div>
             </div>
         `;
-    }
-    
+    });
+
     container.innerHTML = html;
-    modal.classList.add('active');
+}
+
+function moveTagUp(index) {
+    if (index === 0) return;
+
+    const items = document.querySelectorAll('.tag-editor-item');
+    const currentItem = items[index];
+    const previousItem = items[index - 1];
+
+    // Swap display order values
+    const currentOrder = currentItem.querySelector('.order');
+    const previousOrder = previousItem.querySelector('.order');
+
+    const temp = currentOrder.value;
+    currentOrder.value = previousOrder.value;
+    previousOrder.value = temp;
+
+    // Re-render
+    renderTagEditor();
+}
+
+function moveTagDown(index) {
+    const items = document.querySelectorAll('.tag-editor-item');
+    if (index === items.length - 1) return;
+
+    const currentItem = items[index];
+    const nextItem = items[index + 1];
+
+    // Swap display order values
+    const currentOrder = currentItem.querySelector('.order');
+    const nextOrder = nextItem.querySelector('.order');
+
+    const temp = currentOrder.value;
+    currentOrder.value = nextOrder.value;
+    nextOrder.value = temp;
+
+    // Re-render
+    renderTagEditor();
 }
 
 function closeTagEditor() {
