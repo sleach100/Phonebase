@@ -21,6 +21,20 @@ async function init() {
     setupEventListeners();
     renderTagFilters();
     renderContactList();
+    registerServiceWorker();
+}
+
+// Service Worker Registration
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+                console.log('Service Worker registered successfully:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('Service Worker registration failed:', error);
+            });
+    }
 }
 
 // Supabase API Functions
