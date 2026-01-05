@@ -21,6 +21,20 @@ async function init() {
     setupEventListeners();
     renderTagFilters();
     renderContactList();
+    registerServiceWorker();
+}
+
+// Service Worker Registration
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then((registration) => {
+                console.log('Service Worker registered successfully:', registration.scope);
+            })
+            .catch((error) => {
+                console.log('Service Worker registration failed:', error);
+            });
+    }
 }
 
 // Supabase API Functions
@@ -44,18 +58,39 @@ async function loadTags() {
 }
 async function loadContacts() {
     try {
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/phonebase?select=*&order=name.asc`, {
-            headers: {
-                'apikey': SUPABASE_ANON_KEY,
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        allContacts = [];
+        let offset = 0;
+        const limit = 1000;
+        let hasMore = true;
+
+        // Fetch contacts in batches until we get all of them
+        while (hasMore) {
+            const rangeEnd = offset + limit - 1;
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/phonebase?select=*&order=name.asc`, {
+                headers: {
+                    'apikey': SUPABASE_ANON_KEY,
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Range': `${offset}-${rangeEnd}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to load contacts');
+
+            const batch = await response.json();
+            allContacts = [...allContacts, ...batch];
+
+            // If we got fewer results than the limit, we've reached the end
+            if (batch.length < limit) {
+                hasMore = false;
+            } else {
+                offset += limit;
             }
-        });
-        
-        if (!response.ok) throw new Error('Failed to load contacts');
-        
-        allContacts = await response.json();
+
+            console.log(`Loaded ${allContacts.length} contacts so far...`);
+        }
+
         filteredContacts = [...allContacts];
-        console.log(`Loaded ${allContacts.length} contacts`);
+        console.log(`Finished loading ${allContacts.length} total contacts`);
     } catch (error) {
         console.error('Error loading contacts:', error);
         alert('Failed to load contacts. Check console for details.');
@@ -138,12 +173,30 @@ function setupEventListeners() {
         searchTerm = e.target.value.toLowerCase();
         applyFilters();
         renderContactList();
+
+        // Show/hide clear button
+        const clearBtn = document.getElementById('clearSearchBtn');
+        clearBtn.style.display = searchTerm ? 'block' : 'none';
     });
-    
+
     // Header buttons
     document.getElementById('newEntryBtn').addEventListener('click', () => openContactEditor());
     document.getElementById('showTagsBtn').addEventListener('click', toggleTags);
     document.getElementById('editTagsBtn').addEventListener('click', openTagEditor);
+}
+
+// Clear search
+function clearSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+
+    searchInput.value = '';
+    searchTerm = '';
+    clearBtn.style.display = 'none';
+
+    applyFilters();
+    renderContactList();
+    searchInput.focus();
 }
 
 // Filtering
@@ -472,34 +525,108 @@ async function deleteContact() {
 }
 
 // Tag Editor
+let editingTagData = []; // Temporary state while editing
+
 function openTagEditor() {
     const modal = document.getElementById('tagEditorModal');
-    const container = document.getElementById('tagEditorList');
-    
-    // Show all 50 possible tag positions
-    let html = '';
+
+    // Initialize editing state from allTags
+    editingTagData = [];
     for (let pos = 0; pos < 50; pos++) {
         const tag = allTags.find(t => t.position === pos);
-        const tagName = tag ? tag.name : '';
-        const displayOrder = tag ? tag.display_order : (allTags.length + pos + 1);
-        const isActive = tag ? tag.active : false;
-        
+        editingTagData.push({
+            position: pos,
+            name: tag ? tag.name : '',
+            displayOrder: tag ? tag.display_order : (allTags.length + pos + 1),
+            active: tag ? tag.active : false
+        });
+    }
+
+    renderTagEditor();
+    modal.classList.add('active');
+}
+
+function syncDomToState() {
+    // Collect any changes from current DOM (names, active states) into editingTagData
+    const items = document.querySelectorAll('.tag-editor-item');
+    items.forEach(item => {
+        const position = parseInt(item.querySelector('.tag-name').dataset.position);
+        const tagDataItem = editingTagData.find(t => t.position === position);
+        if (tagDataItem) {
+            tagDataItem.name = item.querySelector('.tag-name').value;
+            tagDataItem.active = item.querySelector('.active').checked;
+            // Note: We don't sync displayOrder here - that's managed by move functions
+        }
+    });
+}
+
+function renderTagEditor() {
+    const container = document.getElementById('tagEditorList');
+
+    // Sort by display order
+    const sortedData = [...editingTagData].sort((a, b) => a.displayOrder - b.displayOrder);
+
+    // Render sorted tags
+    let html = '';
+    sortedData.forEach((tag, index) => {
+        const isFirst = index === 0;
+        const isLast = index === sortedData.length - 1;
+
         html += `
-            <div class="tag-editor-item">
-                <div class="position">${pos + 1}</div>
-                <input type="text" class="tag-name" data-position="${pos}" 
-                       value="${escapeHtml(tagName)}" 
-                       placeholder="Tag ${pos + 1}">
-                <input type="number" class="order" data-position="${pos}" 
-                       value="${displayOrder}" min="1" max="50">
-                <input type="checkbox" class="active" data-position="${pos}"
-                       ${isActive ? 'checked' : ''}>
+            <div class="tag-editor-item" data-index="${index}">
+                <div class="position">${tag.position + 1}</div>
+                <input type="text" class="tag-name" data-position="${tag.position}"
+                       value="${escapeHtml(tag.name)}"
+                       placeholder="Tag ${tag.position + 1}">
+                <input type="hidden" class="order" data-position="${tag.position}"
+                       value="${tag.displayOrder}">
+                <input type="checkbox" class="active" data-position="${tag.position}"
+                       ${tag.active ? 'checked' : ''}>
+                <div class="tag-actions">
+                    <button class="btn-arrow" onclick="moveTagUp(${index})" ${isFirst ? 'disabled' : ''}>▲</button>
+                    <button class="btn-arrow" onclick="moveTagDown(${index})" ${isLast ? 'disabled' : ''}>▼</button>
+                </div>
             </div>
         `;
-    }
-    
+    });
+
     container.innerHTML = html;
-    modal.classList.add('active');
+}
+
+function moveTagUp(index) {
+    if (index === 0) return;
+
+    // First, sync any user edits from DOM to state
+    syncDomToState();
+
+    // Sort to get current display order
+    const sortedData = [...editingTagData].sort((a, b) => a.displayOrder - b.displayOrder);
+
+    // Swap display orders in the actual editingTagData
+    const temp = sortedData[index].displayOrder;
+    sortedData[index].displayOrder = sortedData[index - 1].displayOrder;
+    sortedData[index - 1].displayOrder = temp;
+
+    // Re-render with updated state
+    renderTagEditor();
+}
+
+function moveTagDown(index) {
+    // First, sync any user edits from DOM to state
+    syncDomToState();
+
+    // Sort to get current display order
+    const sortedData = [...editingTagData].sort((a, b) => a.displayOrder - b.displayOrder);
+
+    if (index === sortedData.length - 1) return;
+
+    // Swap display orders in the actual editingTagData
+    const temp = sortedData[index].displayOrder;
+    sortedData[index].displayOrder = sortedData[index + 1].displayOrder;
+    sortedData[index + 1].displayOrder = temp;
+
+    // Re-render with updated state
+    renderTagEditor();
 }
 
 function closeTagEditor() {
@@ -507,31 +634,26 @@ function closeTagEditor() {
 }
 
 async function saveTagChanges() {
+    // First, sync current DOM state into editingTagData
+    syncDomToState();
+
+    // Build updates array from editingTagData
     const updates = [];
-    
-    // Collect all tag data from the editor
-    for (let pos = 0; pos < 50; pos++) {
-        const nameInput = document.querySelector(`.tag-name[data-position="${pos}"]`);
-        const orderInput = document.querySelector(`.order[data-position="${pos}"]`);
-        const activeInput = document.querySelector(`.active[data-position="${pos}"]`);
-        
-        const name = nameInput.value.trim();
-        const displayOrder = parseInt(orderInput.value) || (pos + 1);
-        const active = activeInput.checked;
-        
+    editingTagData.forEach(tag => {
+        const name = tag.name.trim();
         if (name) {
             updates.push({
-                position: pos,
+                position: tag.position,
                 name: name,
-                display_order: displayOrder,
-                active: active
+                display_order: tag.displayOrder,
+                active: tag.active
             });
         }
-    }
+    });
     
     try {
-        // Delete all existing tags
-        await fetch(`${SUPABASE_URL}/rest/v1/tags`, {
+        // Delete all existing tags (must use a filter in Supabase)
+        await fetch(`${SUPABASE_URL}/rest/v1/tags?position=gte.0`, {
             method: 'DELETE',
             headers: {
                 'apikey': SUPABASE_ANON_KEY,

@@ -92,14 +92,37 @@ header h1 {
 .search-box {
     padding: 1rem;
     border-bottom: 1px solid #ddd;
+    position: relative;
 }
 
 .search-box input {
     width: 100%;
-    padding: 0.5rem;
+    padding: 0.5rem 2rem 0.5rem 0.5rem;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 0.9rem;
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 1.3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    transition: color 0.2s;
+}
+
+.clear-search-btn:hover {
+    color: #333;
 }
 
 /* Alpha Filter */
@@ -405,7 +428,7 @@ header h1 {
 /* Tag Editor */
 .tag-editor-header {
     display: grid;
-    grid-template-columns: 50px 1fr 80px 60px;
+    grid-template-columns: 50px 1fr 60px 100px;
     gap: 0.5rem;
     padding: 0.5rem;
     background: #f0f0f0;
@@ -420,7 +443,7 @@ header h1 {
 
 .tag-editor-item {
     display: grid;
-    grid-template-columns: 50px 1fr 80px 60px;
+    grid-template-columns: 50px 1fr 60px 100px;
     gap: 0.5rem;
     padding: 0.5rem;
     border-bottom: 1px solid #eee;
@@ -440,13 +463,40 @@ header h1 {
     text-align: center;
 }
 
-.tag-editor-item .order {
-    width: 60px;
-}
-
 .tag-editor-item .active {
     width: auto;
     justify-self: center;
+}
+
+.tag-actions {
+    display: flex;
+    gap: 0.25rem;
+    justify-content: center;
+}
+
+.btn-arrow {
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.btn-arrow:hover:not(:disabled) {
+    background: #0056b3;
+}
+
+.btn-arrow:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 /* Responsive */
